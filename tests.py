@@ -173,6 +173,7 @@ class ParseRequestTestCase(unittest.TestCase):
                 "expected {0}, got {1}".format(expected, actual)
             )
 
+   
 
 class ResolveURITestCase(unittest.TestCase):
     """unit tests for the resolve_uri function"""
@@ -180,6 +181,7 @@ class ResolveURITestCase(unittest.TestCase):
     def call_function_under_test(self, uri):
         """call the resolve_uri function"""
         from http_server import resolve_uri
+        print 'this test {}'.format(uri)
         return resolve_uri(uri)
 
     def test_directory_resource(self):

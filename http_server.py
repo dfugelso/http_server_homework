@@ -3,13 +3,14 @@ import sys
 import os
 import mimetypes
 
-def response_ok(content, type):
+def response_ok(body, mimetype):
     """returns a basic HTTP response"""
     resp = []
     resp.append("HTTP/1.1 200 OK")
-    resp.append("Content-Type: {}".format(type))
+    resp.append("Content-Type: {}".format(mimetype))
     resp.append("")
-    resp.append("this is a pretty minimal response")
+    if 'text' in mimetype:
+        resp.append(body)
     return "\r\n".join(resp)
 
 
@@ -36,6 +37,16 @@ def parse_request(request):
     print >>sys.stderr, 'request is okay'
     return uri
     
+def create_directory_list(dir_list):
+    '''
+    Create a text listing for a directory from a list.
+    '''
+    text = ''
+    for filename in dir_list:
+        text = text + filename + '\r\n'
+    return text
+    
+    
 #Set root directory (i.e. Home) for available resources    
 root_directory = '.\webroot'
 def resolve_uri (uri):
@@ -45,10 +56,12 @@ def resolve_uri (uri):
     Raise NotFound error if resource is not there
     '''
     rootLength = len(root_directory)
+    uri = uri.replace("\\", '') 
+    print 'this uri {}'.format(uri)
 
     #Check for root directory
     if uri == "/":
-        return os.listdir(root_directory), 'text/plain'
+        return create_directory_list(os.listdir(root_directory)), 'text/plain'
 
     #Strip leading '/'    
     uri = uri[1:]
@@ -58,7 +71,7 @@ def resolve_uri (uri):
         uricmp = dirpath[rootLength+1:]
         for dir in dirnames:
             if os.path.join(uricmp, dir) == uri:
-                return os.listdir(os.path.join(dirpath, dir)), 'text/plain'
+                return create_directory_list(os.listdir(os.path.join(dirpath, dir))), 'text/plain'
         for fname in filenames:
             test_path =  os.path.join(uricmp, fname).replace('\\', '/') 
             if test_path == uri:
@@ -96,7 +109,6 @@ def server():
                 except NotImplementedError:
                     response = response_method_not_allowed()
                 else:
-                    print 'Hello!'
                     # Try to get URI and resolve it. Catch NameError for resource not found
                     try:
                         content, type = resolve_uri(uri)

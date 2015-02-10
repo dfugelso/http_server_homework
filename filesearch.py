@@ -2,7 +2,18 @@ import os
 import mimetypes
 #import exceptions
 
-root_directory = '.\webroot'
+def create_directory_list(dir_list):
+    '''
+    Create a text listing for a directory from a list.
+    '''
+    text = ''
+    for filename in dir_list:
+        text = text + filename + '\r\n'
+    return text
+    
+    
+#Set root directory (i.e. Home) for available resources    
+root_directory = './webroot'
 def resolve_uri (uri):
     '''
     Find the resources on disk that the URI points to. 
@@ -10,10 +21,12 @@ def resolve_uri (uri):
     Raise NotFound error if resource is not there
     '''
     rootLength = len(root_directory)
-
+    uri = uri.replace("\\", '') 
+    print 'this uri {}'.format(uri)
+    
     #Check for root directory
     if uri == "/":
-        return os.listdir(root_directory), 'text/plain'
+        return create_directory_list(os.listdir(root_directory)), 'text/plain'
 
     #Strip leading '/'    
     uri = uri[1:]
@@ -23,7 +36,7 @@ def resolve_uri (uri):
         uricmp = dirpath[rootLength+1:]
         for dir in dirnames:
             if os.path.join(uricmp, dir) == uri:
-                return os.listdir(os.path.join(dirpath, dir)), 'text/plain'
+                return create_directory_list(os.listdir(os.path.join(dirpath, dir))), 'text/plain'
         for fname in filenames:
             test_path =  os.path.join(uricmp, fname).replace('\\', '/') 
             if test_path == uri:
@@ -33,8 +46,9 @@ def resolve_uri (uri):
                 return body, mimetypes.types_map[extension]
     raise NameError
             
+            
 if __name__ == '__main__':
-    resource_list = ['/', '/images/sample_1.png', '/images','/sample.txt','/images/TestDepth/t.txt','/Notthere.txt','/make_time.py']
+    resource_list = ['/', '/\images', '/images/sample_1.png', '/images','/sample.txt','/images/TestDepth/t.txt','/Notthere.txt','/make_time.py']
     for uri in resource_list:
         try:
             body, type = resolve_uri(uri)
