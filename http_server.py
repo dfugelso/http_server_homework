@@ -1,6 +1,7 @@
 import socket
 import sys
-
+import os
+import mimetypes
 
 def response_ok():
     """returns a basic HTTP response"""
@@ -27,6 +28,35 @@ def parse_request(request):
         raise NotImplementedError("We only accept GET")
     print >>sys.stderr, 'request is okay'
     return uri
+    
+#Set root directory (i.e. Home) for available resources    
+root_directory = '.\webroot'
+def resolve_uri (uri):
+    '''
+    Find the resources on disk that the URI points to. 
+    Return content, type
+    Raise NotFound error if resource is not there
+    '''
+    rootLength = len(root_directory)
+    
+    for (dirpath, dirnames, filenames) in os.walk(root_directory): 
+    
+        #Check against string w/o root_directory in it
+        uricmp = dirpath[rootLength+1:]
+        
+        #Check for folder first
+        for dir in dirnames:
+            if os.path.join(uricmp, dir) == uri:
+                return os.listdir(os.path.join(dirpath, dir)), 'test/plain'
+                
+        for  fname in filenames:
+            #Windows, ugh, again.
+            test_path =  os.path.join(uricmp, fname).replace('\\', '/') 
+            if test_path == uri:
+                with open(os.path.join(dirpath, fname), 'rb') as f:
+                    extension = os.path.splitext(fname)[1]
+                    return f.read(), mimetypes.types_map[extension]
+    raise EnvironmentError
 
 
 def server():
