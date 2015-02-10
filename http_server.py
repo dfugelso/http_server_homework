@@ -3,11 +3,11 @@ import sys
 import os
 import mimetypes
 
-def response_ok():
+def response_ok(content, type):
     """returns a basic HTTP response"""
     resp = []
     resp.append("HTTP/1.1 200 OK")
-    resp.append("Content-Type: text/plain")
+    resp.append("Content-Type: {}".format(type))
     resp.append("")
     resp.append("this is a pretty minimal response")
     return "\r\n".join(resp)
@@ -17,6 +17,13 @@ def response_method_not_allowed():
     """returns a 405 Method Not Allowed response"""
     resp = []
     resp.append("HTTP/1.1 405 Method Not Allowed")
+    resp.append("")
+    return "\r\n".join(resp)
+    
+def response_not_found ():
+    """returns a 404 Method Not Found"""
+    resp = []
+    resp.append("HTTP/1.1 404 Not Found")
     resp.append("")
     return "\r\n".join(resp)
 
@@ -38,25 +45,29 @@ def resolve_uri (uri):
     Raise NotFound error if resource is not there
     '''
     rootLength = len(root_directory)
-    
+
+    #Check for root directory
+    if uri == "/":
+        return os.listdir(root_directory), 'text/plain'
+
+    #Strip leading '/'    
+    uri = uri[1:]
+
+    #Walk through root directory structure
     for (dirpath, dirnames, filenames) in os.walk(root_directory): 
-    
-        #Check against string w/o root_directory in it
         uricmp = dirpath[rootLength+1:]
-        
-        #Check for folder first
         for dir in dirnames:
             if os.path.join(uricmp, dir) == uri:
-                return os.listdir(os.path.join(dirpath, dir)), 'test/plain'
-                
-        for  fname in filenames:
-            #Windows, ugh, again.
+                return os.listdir(os.path.join(dirpath, dir)), 'text/plain'
+        for fname in filenames:
             test_path =  os.path.join(uricmp, fname).replace('\\', '/') 
             if test_path == uri:
+                extension = os.path.splitext(fname)[1]
                 with open(os.path.join(dirpath, fname), 'rb') as f:
-                    extension = os.path.splitext(fname)[1]
-                    return f.read(), mimetypes.types_map[extension]
-    raise EnvironmentError
+                    body = f.read()
+                return body, mimetypes.types_map[extension]
+    raise NameError
+            
 
 
 def server():
@@ -85,17 +96,15 @@ def server():
                 except NotImplementedError:
                     response = response_method_not_allowed()
                 else:
-                    # replace this line with the following once you have
-                    # written resolve_uri
-                    response = response_ok()
-                    # content, type = resolve_uri(uri) # change this line
-
-                    ## uncomment this try/except block once you have fixed
-                    ## response_ok and added response_not_found
-                    # try:
-                    #     response = response_ok(content, type)
-                    # except NameError:
-                    #     response = response_not_found()
+                    print 'Hello!'
+                    # Try to get URI and resolve it. Catch NameError for resource not found
+                    try:
+                        content, type = resolve_uri(uri)
+                        print '{} is type {}'.format(uri,type)
+                        response = response_ok(content, type)
+                    except NameError:
+                        print 'failed to find: {} len {}'.format(uri, len(uri))
+                        response = response_not_found()
 
                 print >>sys.stderr, 'sending response'
                 conn.sendall(response)
