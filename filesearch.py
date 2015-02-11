@@ -13,9 +13,13 @@ def create_directory_list(dir_list):
     
 def run_python_script(pyfile):
     import subprocess
-    pyfile = pyfile.replace ('/', '.')
-    pyfile = pyfile [:-3]
-    proc = subprocess.Popen(["python", "-c", "import {}".format(pyfile)], stdout=subprocess.PIPE)
+    # pyfile = pyfile.replace ('/', '.')
+    # pyfile = pyfile [:-3]
+    #proc = subprocess.Popen(["python", "-c", "import {}".format(pyfile)], stdout=subprocess.PIPE)
+    #proc = subprocess.Popen(["python {}".format(pyfile), "-c", ""], stdout=subprocess.PIPE)
+    start_string = "python {}".format(pyfile)
+    print start_string
+    proc = subprocess.Popen(["python", pyfile, ""], stdout=subprocess.PIPE)
     return proc.communicate()[0]
     
 #Set root directory (i.e. Home) for available resources    

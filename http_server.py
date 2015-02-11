@@ -9,10 +9,8 @@ def response_ok(body, mimetype):
     resp.append("HTTP/1.1 200 OK")
     resp.append("Content-Type: {}".format(mimetype))
     resp.append("")
-    if 'text' in mimetype:
-        resp.append(body)
-    else:
-        resp.append(body)   
+    resp.append(body)
+  
     return "\r\n".join(resp)
 
 
@@ -54,12 +52,16 @@ def parse_request(request):
     return uri
  
 def run_python_script(pyfile):
+    '''
+    Run a python as a script and return the output as an HTML file.
+    '''
     import subprocess
-    pyfile = pyfile.replace ('/', '.')
-    pyfile = pyfile [:-3]
-    proc = subprocess.Popen(["python", "-c", "import {}"], stdout=subprocess.PIPE)
-    return proc.communicate()[0]
- 
+    text = '<!DOCTYPE html>\r\n<html>\r\n<body>\r\n'
+    proc = subprocess.Popen(["python", pyfile, ""], stdout=subprocess.PIPE)
+    text = text + proc.communicate()[0]
+    text = text + '\r\n</body>\r\n</html>\r\n'
+    return text
+    
 def create_directory_list(dir_list, uri):
     '''
     Create a text listing for a directory from a list.
@@ -108,6 +110,7 @@ def resolve_uri (uri):
                 extension = os.path.splitext(fname)[1]
                 if extension == ".py":
                     body = run_python_script(os.path.join(dirpath, fname))
+                    extension = ".html"
                 else:
                     with open(os.path.join(dirpath, fname), 'rb') as f:
                         body = f.read()
