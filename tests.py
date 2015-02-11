@@ -181,7 +181,6 @@ class ResolveURITestCase(unittest.TestCase):
     def call_function_under_test(self, uri):
         """call the resolve_uri function"""
         from http_server import resolve_uri
-        print 'this test {}'.format(uri)
         return resolve_uri(uri)
 
     def test_directory_resource(self):

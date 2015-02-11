@@ -53,7 +53,7 @@ def parse_request(request):
  
 def run_python_script(pyfile):
     '''
-    Run a python as a script and return the output as an HTML file.
+    Run a python file as a script and return the output as an HTML file.
     '''
     import subprocess
     text = '<!DOCTYPE html>\r\n<html>\r\n<body>\r\n'
@@ -89,7 +89,6 @@ def resolve_uri (uri):
     '''
     rootLength = len(root_directory)
     uri = uri.replace("\\", '') 
-    print 'this uri {}'.format(uri)
 
     #Check for root directory
     if uri == "/":
@@ -99,6 +98,7 @@ def resolve_uri (uri):
     uri = uri[1:]
 
     #Walk through root directory structure
+    # (Okay sitting in class and realize that I don't need to search files like this!)
     for (dirpath, dirnames, filenames) in os.walk(root_directory): 
         uricmp = dirpath[rootLength+1:]
         for dir in dirnames:
@@ -115,7 +115,7 @@ def resolve_uri (uri):
                     with open(os.path.join(dirpath, fname), 'rb') as f:
                         body = f.read()
                 return body, mimetypes.types_map[extension]
-    raise NameError
+    raise ValueError
             
 
 
@@ -150,10 +150,8 @@ def server():
                     # Try to get URI and resolve it. Catch NameError for resource not found
                     try:
                         content, type = resolve_uri(uri)
-                        print '{} is type {}'.format(uri,type)
                         response = response_ok(content, type)
-                    except NameError:
-                        print 'failed to find: {} len {}'.format(uri, len(uri))
+                    except ValueError:
                         response = response_not_found()
 
                 print >>sys.stderr, 'sending response'
