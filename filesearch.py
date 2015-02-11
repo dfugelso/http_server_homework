@@ -11,6 +11,12 @@ def create_directory_list(dir_list):
         text = text + filename + '\r\n'
     return text
     
+def run_python_script(pyfile):
+    import subprocess
+    pyfile = pyfile.replace ('/', '.')
+    pyfile = pyfile [:-3]
+    proc = subprocess.Popen(["python", "-c", "import {}".format(pyfile)], stdout=subprocess.PIPE)
+    return proc.communicate()[0]
     
 #Set root directory (i.e. Home) for available resources    
 root_directory = './webroot'
@@ -49,6 +55,7 @@ def resolve_uri (uri):
             
 if __name__ == '__main__':
     resource_list = ['/', '/\images', '/images/sample_1.png', '/images','/sample.txt','/images/TestDepth/t.txt','/Notthere.txt','/make_time.py']
+    print run_python_script ("webroot/make_time.py")
     for uri in resource_list:
         try:
             body, type = resolve_uri(uri)

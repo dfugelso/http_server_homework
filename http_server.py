@@ -11,6 +11,8 @@ def response_ok(body, mimetype):
     resp.append("")
     if 'text' in mimetype:
         resp.append(body)
+    else:
+        resp.append(body)   
     return "\r\n".join(resp)
 
 
@@ -20,6 +22,14 @@ def response_method_not_allowed():
     resp.append("HTTP/1.1 405 Method Not Allowed")
     resp.append("")
     return "\r\n".join(resp)
+ 
+def response_internal_server_error():
+    """returns a 405 Method Not Allowed response"""
+    resp = []
+    resp.append("HTTP/1.1 500 Internal Server Error")
+    resp.append("")
+    return "\r\n".join(resp) 
+
     
 def response_not_found ():
     """returns a 404 Method Not Found"""
@@ -28,6 +38,12 @@ def response_not_found ():
     resp.append("")
     return "\r\n".join(resp)
 
+def response_bad_value_error ():
+    """returns a erro when Chrome keeps trying to get things"""
+    resp = []
+    resp.append("HTTP/1.1 400 What are you looking for")
+    resp.append("")
+    return "\r\n".join(resp)
 
 def parse_request(request):
     first_line = request.split("\r\n", 1)[0]
@@ -36,14 +52,28 @@ def parse_request(request):
         raise NotImplementedError("We only accept GET")
     print >>sys.stderr, 'request is okay'
     return uri
-    
-def create_directory_list(dir_list):
+ 
+def run_python_script(pyfile):
+    import subprocess
+    pyfile = pyfile.replace ('/', '.')
+    pyfile = pyfile [:-3]
+    proc = subprocess.Popen(["python", "-c", "import {}"], stdout=subprocess.PIPE)
+    return proc.communicate()[0]
+ 
+def create_directory_list(dir_list, uri):
     '''
     Create a text listing for a directory from a list.
     '''
-    text = ''
+    text = '<!DOCTYPE html>\r\n<html>\r\n<body>\r\n'
     for filename in dir_list:
-        text = text + filename + '\r\n'
+        if uri == '':
+            url = 'http://localhost:10000/{}'.format (filename)
+        else:
+            url = 'http://localhost:10000/{}/{}'.format (uri, filename)
+        link = '<a href="{}">{}</a>\r\n'.format (url, filename)
+        print link
+        text = text + link
+    text = text + '</body>\r\n</html>\r\n'
     return text
     
     
@@ -61,7 +91,7 @@ def resolve_uri (uri):
 
     #Check for root directory
     if uri == "/":
-        return create_directory_list(os.listdir(root_directory)), 'text/plain'
+        return create_directory_list(os.listdir(root_directory), ''), 'text/html'
 
     #Strip leading '/'    
     uri = uri[1:]
@@ -71,13 +101,16 @@ def resolve_uri (uri):
         uricmp = dirpath[rootLength+1:]
         for dir in dirnames:
             if os.path.join(uricmp, dir) == uri:
-                return create_directory_list(os.listdir(os.path.join(dirpath, dir))), 'text/plain'
+                return create_directory_list(os.listdir(os.path.join(dirpath, dir)),uri), 'text/html'
         for fname in filenames:
             test_path =  os.path.join(uricmp, fname).replace('\\', '/') 
             if test_path == uri:
                 extension = os.path.splitext(fname)[1]
-                with open(os.path.join(dirpath, fname), 'rb') as f:
-                    body = f.read()
+                if extension == ".py":
+                    body = run_python_script(os.path.join(dirpath, fname))
+                else:
+                    with open(os.path.join(dirpath, fname), 'rb') as f:
+                        body = f.read()
                 return body, mimetypes.types_map[extension]
     raise NameError
             
@@ -108,6 +141,8 @@ def server():
                     uri = parse_request(request)
                 except NotImplementedError:
                     response = response_method_not_allowed()
+                except ValueError:
+                    response = response_bad_value_error()
                 else:
                     # Try to get URI and resolve it. Catch NameError for resource not found
                     try:
